@@ -10,13 +10,15 @@ async function scheduleHtmlProvider(iframeContent = "", frameContent = "", dom =
   }
   if (!window.ltxhhz) window.ltxhhz = {}
   const content = dom.getElementById('edu-cm')
-  let center, frame, frameDom
+  /** @type {HTMLIFrameElement} frame */
+  let frame,
+    /** @type {Document} frameDom */
+    frameDom
   if (!content) {
     await AIScheduleAlert('请在登录完成后并跳转后点击一键导入，如网页打不开请检查vpn是否已连接\n有问题请联系qq:1270897967')
     return
   } else {
     for (const node of content.children) {
-      !center && (center = node)
       if (node.style.display != 'none') {
         ltxhhz.frame = frame = node
         ltxhhz.frameDom = frameDom = node.contentDocument
@@ -63,6 +65,27 @@ async function scheduleHtmlProvider(iframeContent = "", frameContent = "", dom =
         return e
       }) */
     }
+    let configDiv = frameDom.getElementById('ltxhhzConfig')
+    if (!configDiv) {
+      configDiv = frameDom.getElementById('timetable').appendChild((() => {
+        const div = document.createElement('div')
+        div.id = 'ltxhhzConfig'
+        div.style.display = 'none'
+        return div
+      })())
+    }
+    const configObj = {}
+    /** @type {Boolean} */
+    const userConfirm = await AIScheduleConfirm({
+      titleText: '提示',
+      contentText:'是否隐藏老师的职称信息(“教授”、“导师”等)？', 
+      cancelText:'保留',
+      confirmText:'隐藏'
+    })
+    if (userConfirm) {
+      configObj.delTitle = 1
+    }
+    configDiv.innerText = JSON.stringify(configObj)
     // await AIScheduleAlert("如果生成的课表中“午休”和“晚休”的位置不对，请到设置中的“课程表节数和时间设置”里的“一天课节数”修改早中晚的课数。\np.s.如果记不住请截图\n有问题请联系qq:1270897967")
     return frameDom.getElementById('timetable').outerHTML
   }

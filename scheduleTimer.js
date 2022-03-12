@@ -6,11 +6,11 @@ async function scheduleTimer() {
     ltxhhz.frameDom.querySelectorAll('font').forEach(e => {
       try {
         if (e.title.includes('周次')) {
-          let n = /(\d.*\d).*周/.exec(e.innerText)[1]
+          let n = /(\d+[\s\-]*\d+|\d+).*周/.exec(e.innerText)[1]
           if (n.includes('-')) {
             maxWeek = Math.max(+n.split('-')[1], maxWeek)
           } else {
-            maxWeek = Math.max(+/,.?(\d+)/.exec(n)[1], maxWeek)
+            maxWeek = Math.max(+/,?(\d+)/.exec(n)[1], maxWeek)
           }
         }
       } catch (error) {
