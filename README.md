@@ -1,4 +1,5 @@
 # AISchedule-xjsf
+> 联系我：[qq](http://wpa.qq.com/msgrd?v=3&uin=1270897967&site=qq&menu=yes)
 
 ## 介绍
 MIUI小爱课程表 新疆师范大学强智教务系统课程表解析  
