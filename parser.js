@@ -1,5 +1,5 @@
 // 为了有语法提示
-// 提交前需要删除这段
+// 提交前需要 **删除** 这段
 // const cheerio = require('cheerio')
 
 function scheduleHtmlParser(html) {
@@ -12,7 +12,7 @@ function scheduleHtmlParser(html) {
   let config = {}
   try {
     config = JSON.parse($('#ltxhhzConfig').text())
-  } catch (error) { }
+  } catch (error) {}
   try {
     $('tbody').children().each(function (i, el) {
       if (i) { //除去第一行
@@ -38,9 +38,11 @@ function scheduleHtmlParser(html) {
                 el2.childNodes.forEach((node, index) => { //格子里每一行
                   if (node.type == 'text') {
                     if (!node.data.trim()) return
-                    if (/^\-+$/.test(node.data.trim())) {//分割线
+                    if (/^\-+$/.test(node.data.trim())) { //分割线
                       result.push(cls)
-                      cls = { name: '' }
+                      cls = {
+                        name: ''
+                      }
                       return
                     }
                     cls.name += node.data.trim()
@@ -54,9 +56,33 @@ function scheduleHtmlParser(html) {
                       if (node.attribs && node.attribs.title && node.attribs.title.includes('教师')) {
                         cls.teacher = $(node).text().replace(config.delTitle ? /其他|副?教授|讲师|\(.+\)|（.+）/g : '', '').trim()
                       } else if (node.attribs && node.attribs.title && node.attribs.title.includes('周次')) {
-                        let str = /(\d+[\s\-]*\d+|\d+).*周/.exec($(node).text().trim())
-                        if (str[1].includes('-')) {
-                          let arr = str[1].split('-'),
+                        const str = /(\d+[\s\-]*\d+|[\d\s,]+).*周/.exec($(node).text().trim()),
+                          str1 = /([\d\s,\-]+).*周/.exec($(node).text().trim())
+                        if (str1[1].includes('-') && str1[1].includes(',')) {
+                          cls.weeks = []
+                          str1[1].split(',').map(v => {
+                            if (v.includes('-')) {
+                              const arr = v.split('-'),
+                                arr1 = Array(arr[1] - arr[0] + 1).fill().map((v, i) => +i + +arr[0].trim())
+                              if (str[0].includes('单周')) {
+                                return arr1.filter(v => v & 1)
+                              } else if (str[0].includes('双周')) {
+                                return arr1.filter(v => !(v & 1))
+                              } else {
+                                return arr1
+                              }
+                            } else {
+                              return +v.trim()
+                            }
+                          }).forEach(e => {
+                            if (typeof e == 'string' || typeof e == 'number') {
+                              cls.weeks.push(e)
+                            } else {
+                              cls.weeks.push(...e)
+                            }
+                          })
+                        } else if (str[1].includes('-')) {
+                          const arr = str[1].split('-'),
                             arr1 = Array(arr[1] - arr[0] + 1).fill().map((v, i) => +i + +arr[0].trim())
                           if (str[0].includes('单周')) {
                             cls.weeks = arr1.filter(v => v & 1)
