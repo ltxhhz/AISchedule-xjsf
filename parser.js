@@ -1,10 +1,7 @@
-// 为了有语法提示
-// 提交前需要 **删除** 这段
-// const cheerio = require('cheerio')
-
 function scheduleHtmlParser(html) {
   //可使用解析dom匹配，工具内置了$，跟jquery使用方法一样，直接用就可以了，参考：https://juejin.im/post/5ea131f76fb9a03c8122d6b9
   let result = []
+  /**@type {import('cheerio').CheerioAPI} */
   let $ = cheerio.load(html, {
     decodeEntities: false
   })
@@ -19,6 +16,7 @@ function scheduleHtmlParser(html) {
         const num = [] //那一节课到哪一节课
         let brk = false
         $(el).children().each(function (i1, el1) { //tr
+          console.log(`第${i}行 第${i1}列`);
           if (brk) return
           if (i1 == 0) { //th
             let inner = el1.childNodes[0]
@@ -37,15 +35,30 @@ function scheduleHtmlParser(html) {
                 }
                 el2.childNodes.forEach((node, index) => { //格子里每一行
                   if (node.type == 'text') {
-                    if (!node.data.trim()) return
-                    if (/^\-+$/.test(node.data.trim())) { //分割线
+                    /**@type {string} */
+                    const str = node.data.trim()
+                    if (!str) return
+                    if (/^\-+$/.test(str)) { //分割线
                       result.push(cls)
                       cls = {
                         name: ''
                       }
                       return
                     }
-                    cls.name += node.data.trim()
+                    if (config.isTeacher) {
+                      if (/\-.+班/.test(str)) {
+                        cls.teacher = str
+                      } else if (/学时.\d/.test(str)) {
+                        cls.name += `|${str.match(/学时.(\d+)/)[1]}学时`
+                      } else if (/\[[\d\-]+\]/.test(str)) {
+                        //匹配第几节课 不管
+                      } else {
+                        cls.name += cls.name ? `|${str}` : str
+                      }
+                    } else {
+                      cls.name += cls.name ? `|${str}` : str
+                    }
+
                     cls.day = i1
                     cls.sections = num.map(sec => ({
                       section: sec
@@ -54,7 +67,7 @@ function scheduleHtmlParser(html) {
                     if (node.attribs && none.test(node.attribs.style)) return
                     if (node.name == 'font') {
                       if (node.attribs && node.attribs.title && node.attribs.title.includes('教师')) {
-                        cls.teacher = $(node).text().replace(config.delTitle ? /其他|副?教授|讲师|\(.+\)|（.+）/g : '', '').trim()
+                        cls.teacher = $(node).text().replace(config.delTitle ? /其他|副?教授|讲师|\(.+?\)|（.+?）/g : '', '').trim()
                       } else if (node.attribs && node.attribs.title && node.attribs.title.includes('周次')) {
                         const str = /(\d+[\s\-]*\d+|[\d\s,]+).*周/.exec($(node).text().trim()),
                           str1 = /([\d\s,\-]+).*周/.exec($(node).text().trim())

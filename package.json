@@ -1,5 +1,5 @@
 {
-  "dependencies": {
+  "devDependencies": {
     "cheerio": "^1.0.0-rc.10"
   }
 }
