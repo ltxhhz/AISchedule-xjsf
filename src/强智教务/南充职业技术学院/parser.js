@@ -1,0 +1,110 @@
+function scheduleHtmlParser(html) {
+  //可使用解析dom匹配，工具内置了$，跟jquery使用方法一样，直接用就可以了，参考：https://juejin.im/post/5ea131f76fb9a03c8122d6b9
+  let result = []
+  /**@type {import('cheerio').CheerioAPI} */
+  let $ = cheerio.load(html, {
+    decodeEntities: false
+  })
+  // let a = $('tbody')
+  let config = {}
+  try {
+    config = JSON.parse($('#ltxhhzConfig').text())
+  } catch (error) {}
+  try {
+    const clsMap = {
+      一: [1, 2],
+      二: [3, 4],
+      三: [5, 6],
+      四: [7, 8],
+      五: [9, 10]
+    }
+    $('tbody')
+      .children()
+      .each(function (i, el) {
+        if (i) {
+          //除去第一行
+          const num = [] //那一节课到哪一节课
+          const children1 = $(el).children()
+          for (let i1 = 0; i1 < children1.length; i1++) {
+            //tr
+            const el1 = children1.get(i1)
+            console.log(`第${i}行 第${i1}列`)
+            if (i1 === 0) {
+              //th
+              let inner = $(el1).text()
+              const n = inner.trim().match(/[一二三四五]/)
+              if (!n) break
+              num.push(...clsMap[n[0]])
+            } else {
+              let cls = {
+                name: '',
+                day: i1,
+                sections: [2 * i - 1, 2 * i]
+              }
+              //td
+              $('.kbcontent', el1)
+                .children()
+                .each(function (i2, el2) {
+                  const str = $(el2).text().trim()
+                  if (!cls.name) {
+                    cls.name = str
+                  } else {
+                    if (el2.attribs && el2.attribs.title && el2.attribs.title.includes('教师')) {
+                      cls.teacher = str
+                    } else if (el2.attribs && el2.attribs.title && el2.attribs.title.includes('教室')) {
+                      cls.position = str
+                    } else if (el2.attribs && el2.attribs.title && el2.attribs.title.includes('周次')) {
+                      cls.weeks = []
+                      const weekStr = str.match(/([\d-,]+)\(周\)/)[1]
+                      weekStr
+                        .split(',')
+                        .map(w => {
+                          if (w.includes('-')) {
+                            const arr = w.split('-')
+                            const arr1 = Array(arr[1] - arr[0] + 1)
+                              .fill()
+                              .map((v, i) => +i + +arr[0].trim())
+                            return arr1
+                          } else {
+                            return +w.trim()
+                          }
+                        })
+                        .forEach(w => {
+                          if (Array.isArray(w)) {
+                            cls.weeks.push(...w)
+                          } else {
+                            cls.weeks.push(w)
+                          }
+                        })
+                    } else if (el2.next && el2.next.type === 'text' && /^\-+$/.test(el2.next.data)) {
+                      if (!cls.weeks) {
+                        throw new Error('未匹配周次')
+                        //   cls.weeks = new Array(20).fill().map((_, i) => i + 1)
+                      }
+                      result.push(cls)
+                      cls = {
+                        name: '',
+                        day: i1,
+                        sections: [2 * i - 1, 2 * i]
+                      }
+                    }
+                  }
+                })
+              if (cls.name) {
+                if (!cls.weeks) {
+                  throw new Error('未匹配周次')
+                  //   cls.weeks = new Array(20).fill().map((_, i) => i + 1)
+                }
+                result.push(cls)
+              }
+              console.info(cls)
+            }
+          }
+        }
+      })
+    console.info(result)
+    return result
+  } catch (error) {
+    console.error(error)
+  }
+}
