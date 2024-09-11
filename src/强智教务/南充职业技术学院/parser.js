@@ -55,8 +55,8 @@ function scheduleHtmlParser(html) {
                       cls.position = str
                     } else if (el2.attribs && el2.attribs.title && el2.attribs.title.includes('周次')) {
                       cls.weeks = []
-                      const weekStr = str.match(/([\d-,]+)\(周\)/)[1]
-                      weekStr
+                      const weekStr = str.match(/([\d-,]+)\((.?周)\)/)
+                      weekStr[1]
                         .split(',')
                         .map(w => {
                           if (w.includes('-')) {
@@ -64,6 +64,11 @@ function scheduleHtmlParser(html) {
                             const arr1 = Array(arr[1] - arr[0] + 1)
                               .fill()
                               .map((v, i) => +i + +arr[0].trim())
+                              if (weekStr[2] === '单周') {
+                                return arr1.filter(v => v & 1)
+                              } else if (weekStr[2] === '双周') {
+                                return arr1.filter(v => !(v & 1))
+                              }
                             return arr1
                           } else {
                             return +w.trim()
