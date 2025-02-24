@@ -55,6 +55,7 @@ async function scheduleHtmlProvider(iframeContent = '', frameContent = '', dom =
     // await AIScheduleAlert("如果生成的课表中“午休”和“晚休”的位置不对，请到设置中的“课程表节数和时间设置”里的“一天课节数”修改早中晚的课数。\np.s.如果记不住请截图\n有问题请联系qq:1270897967")
     const timetable = frameDom.getElementById('timetable').cloneNode(true)
     checkHidden(timetable.querySelector('tbody'))
+    timetable.querySelectorAll('.kbcontent').forEach(flattenFont)
     return timetable.outerHTML
   }
 }
@@ -64,5 +65,60 @@ function checkHidden(element) {
     element.remove()
   } else {
     Array.from(element.children).forEach(checkHidden)
+  }
+}
+
+function flattenFont(element) {
+  // 递归处理所有子节点
+  for (let i = 0; i < element.childNodes.length; i++) {
+    const child = element.childNodes[i]
+    if (child.nodeType === Node.ELEMENT_NODE) {
+      flattenFont(child)
+    }
+  }
+
+  if (element.tagName === 'FONT') {
+    const parent = element.parentNode
+    if (!parent) return
+
+    // 处理第一个br及其后的内容
+    let brFound = false
+    const nodesToMove = []
+    const keepNodes = []
+    const childNodes = Array.from(element.childNodes)
+
+    for (const node of childNodes) {
+      if (!brFound && node.nodeType === Node.ELEMENT_NODE && node.tagName === 'BR') {
+        brFound = true
+        nodesToMove.push(node)
+      } else if (brFound) {
+        nodesToMove.push(node)
+      } else {
+        keepNodes.push(node)
+      }
+    }
+
+    // 更新当前font的内容，仅保留br之前的部分
+    element.replaceChildren(...keepNodes)
+
+    // 将nodesToMove插入到父级，当前font之后
+    const nextSibling = element.nextSibling
+    if (nodesToMove.length > 0) {
+      nodesToMove.forEach(node => {
+        parent.insertBefore(node, nextSibling)
+      })
+    }
+
+    // 处理子font元素，提升到父级
+    const childFonts = []
+    for (const child of element.children) {
+      if (child.tagName === 'FONT') {
+        childFonts.push(child)
+      }
+    }
+
+    childFonts.forEach(childFont => {
+      parent.insertBefore(childFont, nextSibling)
+    })
   }
 }

@@ -57,7 +57,7 @@ function scheduleHtmlParser(html) {
                       cls.position = str
                     } else if (el2.attribs && el2.attribs.title && el2.attribs.title.includes('周次')) {
                       cls.weeks = []
-                      const weekStr = str.match(/([\d-,]+)\((.?周)\)/)
+                      const weekStr = str.match(/([\d-,]+)\(?(.?周)\)?/)
                       weekStr[1]
                         .split(',')
                         .map(w => {
@@ -83,16 +83,25 @@ function scheduleHtmlParser(html) {
                             cls.weeks.push(w)
                           }
                         })
-                    } else if (el2.next && el2.next.type === 'text' && /^\-+$/.test(el2.next.data)) {
-                      //分割线
-                      if (!cls.weeks) {
-                        throw new Error('未匹配周次')
-                      }
-                      result.push(cls)
-                      cls = {
-                        name: '',
-                        day: i1,
-                        sections: [2 * i - 1, 2 * i]
+                    } else if (el2.next && el2.next.type === 'text') {
+                      const text = el2.next.data.trim()
+                      if (/^\-+$/.test(text)) {
+                        //下一个是分割线
+                        if (!cls.weeks) {
+                          throw new Error('未匹配周次')
+                        }
+                        result.push(cls)
+                        cls = {
+                          name: '',
+                          day: i1,
+                          sections: [2 * i - 1, 2 * i]
+                        }
+                      } else {
+                        if (config.isTeacher) {
+                          if (/\d班/.test(text)) {
+                            cls.teacher = text
+                          }
+                        }
                       }
                     }
                   }
